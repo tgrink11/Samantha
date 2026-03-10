@@ -59,10 +59,8 @@ export default function HeroSection({ data, sharesHeld, portfolioWeight }) {
 
           <div className="hero-stat">
             <span className="hero-stat-label">Market Cap</span>
-            <span className="hero-stat-value">{hero.marketCap || '—'}</span>
-            {hero.marketCapLabel && (
-              <span className="hero-stat-detail">{hero.marketCapLabel}</span>
-            )}
+            <span className="hero-stat-value">{hero.marketCapLabel || hero.marketCap || '—'}</span>
+
           </div>
 
           <div className="hero-stat">
