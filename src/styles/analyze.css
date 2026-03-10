@@ -1,0 +1,17 @@
+/* Analyze page */
+.analyze-page { min-height: 100vh; background: var(--cream); }
+.analyze-header { background: var(--navy); color: white; padding: 3rem 2rem; text-align: center; }
+.analyze-header h1 { font-family: var(--font-serif); font-size: 2rem; }
+.analyze-header p { color: rgba(255,255,255,0.7); margin-top: 0.5rem; }
+.analyze-form-container { max-width: 540px; margin: -2rem auto 4rem; padding: 2rem; background: var(--white); border-radius: var(--radius); box-shadow: 0 4px 24px var(--shadow); }
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group input { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 1rem; font-family: var(--font-sans); transition: border-color 0.2s; }
+.form-group input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(26,35,50,0.1); }
+.form-group input::placeholder { color: var(--text-muted); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.analyze-submit { width: 100%; padding: 1rem; background: var(--orange); color: white; border: none; border-radius: var(--radius); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
+.analyze-submit:hover { background: var(--orange-light); }
+.analyze-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.form-error { background: var(--red-bg); color: var(--red); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem; }
+.form-back { display: inline-block; margin-bottom: 1rem; }

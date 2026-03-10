@@ -1,0 +1,28 @@
+:root {
+  --navy: #1a2332;
+  --navy-light: #243447;
+  --orange: #c4622a;
+  --orange-light: #d4763f;
+  --cream: #f8f5f0;
+  --cream-dark: #efe9e0;
+  --text-primary: #2c3e50;
+  --text-secondary: #5a6c7d;
+  --text-muted: #8899a6;
+  --white: #ffffff;
+  --green: #27ae60;
+  --green-bg: #eafaf1;
+  --red: #c0392b;
+  --red-bg: #fdecea;
+  --amber: #e67e22;
+  --amber-bg: #fef5e7;
+  --gray-light: #ecf0f1;
+  --gray-border: #dde1e5;
+  --shadow: rgba(0, 0, 0, 0.08);
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --section-gap: 3rem;
+  --card-pad: 1.5rem;
+  --content-max: 820px;
+  --radius: 8px;
+  --radius-sm: 4px;
+}

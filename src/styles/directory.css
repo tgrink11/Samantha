@@ -1,0 +1,16 @@
+/* Directory page */
+.directory-page { min-height: 100vh; }
+.directory-hero { background: var(--navy); color: white; padding: 4rem 2rem; text-align: center; }
+.directory-hero h1 { font-family: var(--font-serif); font-size: 2.5rem; }
+.directory-hero p { color: rgba(255,255,255,0.7); margin-top: 0.5rem; }
+.directory-content { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
+.directory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+.report-card { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius); padding: 1.5rem; transition: box-shadow 0.2s, transform 0.2s; text-decoration: none; color: inherit; display: block; }
+.report-card:hover { box-shadow: 0 4px 16px var(--shadow); transform: translateY(-2px); text-decoration: none; }
+.report-card-ticker { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+.report-card-company { color: var(--text-secondary); margin: 0.25rem 0; }
+.report-card-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem; }
+.analyze-fab { position: fixed; bottom: 2rem; right: 2rem; background: var(--orange); color: white; padding: 1rem 2rem; border-radius: 50px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: background 0.2s; text-decoration: none; z-index: 50; }
+.analyze-fab:hover { background: var(--orange-light); text-decoration: none; }
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.empty-state h3 { font-family: var(--font-serif); color: var(--text-primary); margin-bottom: 0.5rem; }

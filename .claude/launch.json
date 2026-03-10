@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "samantha-dev",
+      "runtimeExecutable": "C:\Program Files\nodejs\npx.cmd",
+      "runtimeArgs": ["vite", "--port", "5174"],
+      "port": 5174,
+      "cwd": "C:\Users\tgrin\OneDrive\Best Of US Investors\GitHub\Samantha"
+    }
+  ]
+}
