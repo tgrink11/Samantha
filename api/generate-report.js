@@ -183,7 +183,7 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6-20250514",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 16000,
         system: "You are Samantha, an expert AI stock analyst. You MUST return ONLY valid JSON matching the exact schema requested. Do not include any markdown formatting, code fences, or explanatory text. Output raw JSON only.",
         messages: [
