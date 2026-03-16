@@ -90,6 +90,17 @@ export function buildUserPrompt(stockData, userInput) {
   const analysisInstructions = `
 === ANALYSIS INSTRUCTIONS ===
 
+CRITICAL RULES — READ FIRST:
+1. You MUST populate EVERY field in EVERY section. Do NOT write "N/A", null, or empty strings for ANY field.
+2. If exact data is missing, use the closest available data, calculate from related data, or provide your best estimate with a note.
+3. The quote data (REAL-TIME QUOTE) contains: price, changesPercentage, change, dayLow, dayHigh, yearHigh, yearLow, marketCap, volume, avgVolume, eps, pe. USE THESE VALUES.
+4. The ratios TTM data contains: peRatioTTM, pegRatioTTM, priceToBookRatioTTM, priceToSalesRatioTTM, returnOnEquityTTM, returnOnAssetsTTM, debtEquityRatioTTM, currentRatioTTM, etc. USE THESE VALUES for the "current" column in Key Ratios.
+5. The annual ratios data contains the same ratios for prior years. Use these for prior1 and prior2 columns.
+6. The key metrics TTM data contains: enterpriseValueOverEBITDATTM, marketCapTTM, peRatioTTM, etc. USE THESE VALUES.
+7. Technical indicators (RSI, SMA 50, SMA 200) are provided in the data. Extract the numeric values from these.
+8. Historical prices contain date, open, high, low, close, volume. Use these for volatility calculations and technical analysis.
+9. For the podcast script: write the FULL 800-1200 word script. Do NOT truncate or abbreviate it.
+
 Using ALL the data above, produce a comprehensive stock analysis report as a single JSON object.
 Address the user as "${userName || 'Investor'}" throughout. The analysis date is ${analysisDate || 'today'}.
 
@@ -128,21 +139,36 @@ BALANCE SHEET: Extract 5-8 key items (cash & equivalents, total debt, stockholde
 --- SECTION: keyRatios ---
 Build a table of key ratios with current, prior1 (1 year ago), prior2 (2 years ago), and industryAvg columns.
 Include at minimum: P/E (TTM), Forward P/E, PEG Ratio, Price/Book, Price/Sales, ROE, ROA, Debt/Equity, Current Ratio, EV/EBITDA.
-Use the ratios and key metrics data to fill these. For industry averages, use reasonable sector benchmarks from your knowledge if not in the data.
+
+DATA MAPPING FOR KEY RATIOS:
+- "current" column: Use FINANCIAL RATIOS (TTM) data → peRatioTTM, pegRatioTTM, priceToBookRatioTTM, priceToSalesRatioTTM, returnOnEquityTTM, returnOnAssetsTTM, debtEquityRatioTTM, currentRatioTTM. Also use KEY METRICS (TTM) → enterpriseValueOverEBITDATTM for EV/EBITDA.
+- "prior1" column: Use FINANCIAL RATIOS (Annual) array index [1] (second entry = 1 year ago).
+- "prior2" column: Use FINANCIAL RATIOS (Annual) array index [2] (third entry = 2 years ago).
+- "industryAvg": Use your knowledge of sector benchmarks.
+- If a TTM ratio shows as 0 or very small, it may mean the company is unprofitable — display as "N/M" (not meaningful) with context, NOT "N/A".
+- Format values as readable strings: "25.3x" for P/E, "1.2x" for P/B, "15.4%" for ROE, etc.
+
 Commentary must start with "Valuation Context:" and analyze whether the stock is overvalued, fairly valued, or undervalued relative to growth and peers.
 
 --- SECTION: growth ---
 Kerry's Rule of 40: This is NOT the traditional SaaS Rule of 40. Kerry's version = 3-Year Revenue CAGR + 3-Year EPS CAGR.
-Calculate both CAGRs from the income statement data. The sum is the ruleOf40Score. ruleOf40Max is always "40".
-If the sum exceeds 40, the company passes. Provide ruleOf40Commentary explaining the result.
 
-Metrics array should include:
-- Most recent quarter revenue growth YoY
-- Full year revenue (most recent)
-- Forward guidance / estimates (from analyst estimates)
-- Gross margin (most recent)
-- EBITDA margin or EBITDA (most recent)
-- Diluted EPS (most recent quarter and YoY change)
+DATA MAPPING FOR RULE OF 40:
+- Use INCOME STATEMENTS (Annual) data. The array is sorted most recent first.
+- Revenue CAGR: Calculate from revenue field across the annual income statements. Formula: ((latest_revenue / earliest_revenue)^(1/years) - 1) * 100
+- EPS CAGR: Calculate from eps or epsdiluted field across annual income statements. If EPS went from negative to positive, use absolute values and note the turnaround.
+- ruleOf40Score: The SUM of Revenue CAGR % + EPS CAGR %. Return as a NUMBER (e.g. 55.3), NOT a string.
+- ruleOf40Max: Always the number 40.
+- If a company has negative EPS in the base year, estimate CAGR based on the trend and note the limitation.
+- NEVER return "N/A" for ruleOf40Score. Always calculate or estimate a number.
+
+Metrics array should include (extract from QUARTERLY income statements for most recent quarter, ANNUAL for full year):
+- Most recent quarter revenue growth YoY (compare Q revenue to same Q prior year)
+- Full year revenue (most recent annual, formatted like "$1.2B")
+- Forward guidance / estimates (from ANALYST ESTIMATES data)
+- Gross margin (grossProfit / revenue from most recent period)
+- EBITDA margin or EBITDA (from income statement or cash flow)
+- Diluted EPS (epsdiluted from most recent quarter and YoY change)
 
 Commentary must start with "Growth Analysis:" and discuss revenue acceleration/deceleration, margin trends, and EPS trajectory.
 
@@ -168,9 +194,9 @@ Aggressive: Assume strong execution, market expansion, multiple expansion. Bull 
 
 For each scenario:
 - assumptions: 1-2 sentences describing the scenario
-- jan2027, jan2028, jan2029: projected stock prices as strings (e.g. "$185")
-- threeYearROI: percentage return from current price to Jan 2029 price (e.g. "+145%")
-- meetsGoal: boolean — does this scenario achieve 100%+ ROI by Jan 2029?
+- jan2027, jan2028, jan2029: projected stock prices as strings (e.g. "$185"). You MUST provide numeric price targets, NOT "N/A".
+- threeYearROI: Calculate as ((jan2029_price - current_price) / current_price * 100). Format as "+145%" or "-20%". Use the current price from the REAL-TIME QUOTE data. NEVER return "N/A" — always calculate this number.
+- meetsGoal: boolean — does this scenario achieve 100%+ ROI by Jan 2029? true or false, NEVER null.
 
 Commentary must start with "100% ROI Goal Check:" and clearly state which scenarios meet the Best of Us Investors 100% ROI standard and what needs to happen for each.
 
@@ -190,11 +216,18 @@ VOLATILITY & RISK METRICS:
 RISK FACTORS: Identify 4-6 key risk factors. Each has name, severity ("High"/"Medium"/"Low"), and detail.
 Include company-specific, industry, macro, and regulatory risks.
 
-TECHNICAL ANALYSIS:
-- currentPrice, sma50, sma200 with interpretation notes
-- week52High and week52Low with distance notes
-- avgVolume and shortInterest
-- technicalAssessment must start with "Technical Assessment:" and provide an overall technical outlook (bullish/bearish/neutral with supporting evidence from RSI, moving averages, volume patterns)
+TECHNICAL ANALYSIS — DATA MAPPING:
+- currentPrice: Use the "price" field from REAL-TIME QUOTE data. Format as "$XX.XX".
+- sma50: Extract the numeric "sma" value from SMA 50-DAY data (it's in the first element of the array). Format as "$XX.XX".
+- sma200: Extract the numeric "sma" value from SMA 200-DAY data. Format as "$XX.XX".
+- sma50Note / sma200Note: Compare currentPrice to the SMA value (e.g. "Trading 5% above 50-day SMA").
+- week52High: Use "yearHigh" from REAL-TIME QUOTE data. Format as "$XX.XX".
+- week52Low: Use "yearLow" from REAL-TIME QUOTE data. Format as "$XX.XX".
+- week52HighNote / week52LowNote: Calculate % distance from current price to high/low.
+- avgVolume: Use "avgVolume" from REAL-TIME QUOTE data. Format as "XXM" or "XX.XM".
+- shortInterest: Use short interest data from the quantitative section.
+- technicalAssessment must start with "Technical Assessment:" and provide an overall technical outlook. Use RSI data (RSI > 70 = overbought, < 30 = oversold), moving average crossovers, and volume patterns.
+- NEVER leave currentPrice, sma50, sma200, week52High, or week52Low as null or N/A. The data IS in the quote and technical indicator sections.
 
 --- SECTION: qualitative ---
 - businessModel: 2-3 sentences on how the company makes money and the durability of the model
