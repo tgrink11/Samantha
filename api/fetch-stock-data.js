@@ -99,6 +99,14 @@ export default async function handler(req, res) {
       }
     });
 
+    // Validate that FMP returned data for the correct ticker
+    const profileData = Array.isArray(fmpData.profile) ? fmpData.profile[0] : fmpData.profile;
+    const quoteData = Array.isArray(fmpData.quote) ? fmpData.quote[0] : fmpData.quote;
+    const returnedTicker = profileData?.symbol || quoteData?.symbol || '';
+    if (returnedTicker && returnedTicker.toUpperCase() !== ticker) {
+      console.error(`TICKER MISMATCH: requested ${ticker}, FMP returned ${returnedTicker}`);
+    }
+
     // Map FRED results
     const fredData = {};
     fredSeries.forEach((key, i) => {
@@ -225,7 +233,8 @@ export default async function handler(req, res) {
       _errors: Object.keys(fmpErrors).length > 0 ? fmpErrors : undefined,
     };
 
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+    // No CDN caching — each ticker must get fresh data to prevent cross-contamination
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
     return res.status(200).json(payload);
   } catch (err) {
     console.error('fetch-stock-data error:', err);
