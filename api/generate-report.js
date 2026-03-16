@@ -192,11 +192,16 @@ function buildUserPrompt(stockData, userInput) {
   const dataBlocks = [
     safeStringify(d.profile, 'COMPANY PROFILE'),
     safeStringify(d.quote, 'REAL-TIME QUOTE'),
-    safeStringify(d.incomeStatements, 'INCOME STATEMENTS (Quarterly, last 12 quarters)'),
-    safeStringify(d.balanceSheet, 'BALANCE SHEET (Quarterly, last 4 quarters)'),
-    safeStringify(d.cashFlow, 'CASH FLOW STATEMENT (Quarterly, last 4 quarters)'),
+    safeStringify(d.incomeStatementsAnnual, 'INCOME STATEMENTS (Annual, last 4 years)'),
+    safeStringify(d.incomeStatementsQuarterly, 'INCOME STATEMENTS (Quarterly, last 8 quarters)'),
+    safeStringify(d.balanceSheetAnnual, 'BALANCE SHEET (Annual, last 4 years)'),
+    safeStringify(d.balanceSheetQuarterly, 'BALANCE SHEET (Quarterly, last 4 quarters)'),
+    safeStringify(d.cashFlowAnnual, 'CASH FLOW STATEMENT (Annual, last 4 years)'),
+    safeStringify(d.cashFlowQuarterly, 'CASH FLOW STATEMENT (Quarterly, last 4 quarters)'),
     safeStringify(d.ratiosTTM, 'FINANCIAL RATIOS (TTM)'),
+    safeStringify(d.ratiosAnnual, 'FINANCIAL RATIOS (Annual, last 4 years)'),
     safeStringify(d.keyMetricsTTM, 'KEY METRICS (TTM)'),
+    safeStringify(d.keyMetricsAnnual, 'KEY METRICS (Annual, last 4 years)'),
     safeStringify(d.enterpriseValue, 'ENTERPRISE VALUE'),
     safeStringify(d.analystEstimates, 'ANALYST ESTIMATES (EPS & Revenue)'),
     safeStringify(d.analystConsensus, 'ANALYST RECOMMENDATIONS (Buy/Hold/Sell consensus)'),
@@ -254,17 +259,17 @@ SHORT INTEREST: Populate sharesShort (formatted like "28.5M"), shortPercentFloat
 Use data from the quote, key metrics, or your knowledge of the stock. If exact data is unavailable, provide your best estimate and note it in commentary.
 You MUST populate all short interest fields — NEVER leave them as null or empty.
 
-BALANCE SHEET: Extract 5-8 key items (cash & equivalents, total debt, stockholders equity, goodwill, current assets, current liabilities, etc.) with labels, formatted values, and trend context. Add overall commentary.
+BALANCE SHEET: Extract 5-8 key items from the ANNUAL and QUARTERLY balance sheet data (cash & equivalents, total debt, stockholders equity, goodwill, current assets, current liabilities, etc.) with labels, formatted values, and trend context. Add overall commentary.
 
 --- SECTION: keyRatios ---
 Build a table of key ratios with current, prior1 (1 year ago), prior2 (2 years ago), and industryAvg columns.
 Include at minimum: P/E (TTM), Forward P/E, PEG Ratio, Price/Book, Price/Sales, ROE, ROA, Debt/Equity, Current Ratio, EV/EBITDA.
-Use the ratios and key metrics data to fill these. For industry averages, use reasonable sector benchmarks from your knowledge if not in the data.
+Use the TTM ratios for "current" and the ANNUAL ratios data for prior1 and prior2 columns. For industry averages, use reasonable sector benchmarks from your knowledge if not in the data.
 Commentary must start with "Valuation Context:" and analyze whether the stock is overvalued, fairly valued, or undervalued relative to growth and peers.
 
 --- SECTION: growth ---
 Kerry's Rule of 40: This is NOT the traditional SaaS Rule of 40. Kerry's version = 3-Year Revenue CAGR + 3-Year EPS CAGR.
-Calculate both CAGRs from the income statement data. The sum is the ruleOf40Score. ruleOf40Max is always 40.
+Calculate both CAGRs from the ANNUAL income statement data. The sum is the ruleOf40Score. ruleOf40Max is always 40.
 If the sum exceeds 40, the company passes. Provide ruleOf40Commentary explaining the result.
 
 Metrics array should include:

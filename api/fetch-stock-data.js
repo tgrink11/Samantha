@@ -47,24 +47,32 @@ export default async function handler(req, res) {
   try {
     // ── FMP requests ──────────────────────────────────────────────────
     const fmpEndpoints = {
-      profile:           `/stable/profile?symbol=${ticker}`,
-      quote:             `/stable/quote?symbol=${ticker}`,
-      income:            `/stable/income-statement?symbol=${ticker}&limit=12&period=quarter`,
-      balanceSheet:      `/stable/balance-sheet-statement?symbol=${ticker}&limit=4&period=quarter`,
-      cashFlow:          `/stable/cash-flow-statement?symbol=${ticker}&limit=4&period=quarter`,
-      ratiosTTM:         `/stable/ratios-ttm?symbol=${ticker}`,
-      keyMetricsTTM:     `/stable/key-metrics-ttm?symbol=${ticker}`,
-      analystEstimates:  `/stable/analyst-estimates?symbol=${ticker}&limit=8`,
-      analystConsensus:  `/stable/analyst-stock-recommendations?symbol=${ticker}`,
-      upgradesDowngrades:`/stable/upgrades-downgrades?symbol=${ticker}&limit=20`,
-      institutionalOwn:  `/stable/institutional-ownership/extract-analytics/holder?symbol=${ticker}`,
-      insiderTrading:    `/stable/insider-trading?symbol=${ticker}&limit=20`,
-      stockPeers:        `/stable/stock-peers?symbol=${ticker}`,
-      historicalPrices:  `/stable/historical-price-eod/full?symbol=${ticker}&from=${fromDate}`,
-      rsi:               `/stable/technical-indicators/rsi?symbol=${ticker}&periodLength=14&timeframe=1day`,
-      sma50:             `/stable/technical-indicators/sma?symbol=${ticker}&periodLength=50&timeframe=1day`,
-      sma200:            `/stable/technical-indicators/sma?symbol=${ticker}&periodLength=200&timeframe=1day`,
-      enterpriseValue:   `/stable/enterprise-value?symbol=${ticker}&limit=4&period=quarter`,
+      profile:              `/stable/profile?symbol=${ticker}`,
+      quote:                `/stable/quote?symbol=${ticker}`,
+      // Annual financials (for multi-year comparisons, Rule of 40, growth trends)
+      incomeAnnual:         `/stable/income-statement?symbol=${ticker}&limit=4&period=annual`,
+      balanceSheetAnnual:   `/stable/balance-sheet-statement?symbol=${ticker}&limit=4&period=annual`,
+      cashFlowAnnual:       `/stable/cash-flow-statement?symbol=${ticker}&limit=4&period=annual`,
+      // Quarterly financials (for recent quarter detail)
+      incomeQuarterly:      `/stable/income-statement?symbol=${ticker}&limit=8&period=quarter`,
+      balanceSheetQuarterly:`/stable/balance-sheet-statement?symbol=${ticker}&limit=4&period=quarter`,
+      cashFlowQuarterly:    `/stable/cash-flow-statement?symbol=${ticker}&limit=4&period=quarter`,
+      // Ratios & metrics (TTM + annual history)
+      ratiosTTM:            `/stable/ratios-ttm?symbol=${ticker}`,
+      ratiosAnnual:         `/stable/ratios?symbol=${ticker}&limit=4&period=annual`,
+      keyMetricsTTM:        `/stable/key-metrics-ttm?symbol=${ticker}`,
+      keyMetricsAnnual:     `/stable/key-metrics?symbol=${ticker}&limit=4&period=annual`,
+      analystEstimates:     `/stable/analyst-estimates?symbol=${ticker}&limit=8`,
+      analystConsensus:     `/stable/analyst-stock-recommendations?symbol=${ticker}`,
+      upgradesDowngrades:   `/stable/upgrades-downgrades?symbol=${ticker}&limit=20`,
+      institutionalOwn:     `/stable/institutional-ownership/extract-analytics/holder?symbol=${ticker}`,
+      insiderTrading:       `/stable/insider-trading?symbol=${ticker}&limit=20`,
+      stockPeers:           `/stable/stock-peers?symbol=${ticker}`,
+      historicalPrices:     `/stable/historical-price-eod/full?symbol=${ticker}&from=${fromDate}`,
+      rsi:                  `/stable/technical-indicators/rsi?symbol=${ticker}&periodLength=14&timeframe=1day`,
+      sma50:                `/stable/technical-indicators/sma?symbol=${ticker}&periodLength=50&timeframe=1day`,
+      sma200:               `/stable/technical-indicators/sma?symbol=${ticker}&periodLength=200&timeframe=1day`,
+      enterpriseValue:      `/stable/enterprise-value?symbol=${ticker}&limit=4&period=annual`,
     };
 
     const fmpKeys = Object.keys(fmpEndpoints);
@@ -121,28 +129,60 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── Trim bloated data to save prompt tokens ────────────────────────
+    // Historical prices: sample to ~monthly (every 21 trading days) instead of daily
+    let trimmedPrices = fmpData.historicalPrices;
+    if (Array.isArray(trimmedPrices) && trimmedPrices.length > 50) {
+      const sampled = [];
+      for (let i = 0; i < trimmedPrices.length; i += 21) {
+        sampled.push(trimmedPrices[i]);
+      }
+      // Always include the most recent and oldest
+      if (sampled[0] !== trimmedPrices[0]) sampled.unshift(trimmedPrices[0]);
+      trimmedPrices = sampled;
+    } else if (trimmedPrices && typeof trimmedPrices === 'object' && Array.isArray(trimmedPrices.historical)) {
+      // FMP sometimes returns { symbol, historical: [...] }
+      const hist = trimmedPrices.historical;
+      const sampled = [];
+      for (let i = 0; i < hist.length; i += 21) {
+        sampled.push(hist[i]);
+      }
+      if (sampled[0] !== hist[0]) sampled.unshift(hist[0]);
+      trimmedPrices = { symbol: trimmedPrices.symbol, historical: sampled };
+    }
+
+    // Technical indicators: only keep latest value
+    const latestRsi = Array.isArray(fmpData.rsi) ? fmpData.rsi.slice(0, 1) : fmpData.rsi;
+    const latestSma50 = Array.isArray(fmpData.sma50) ? fmpData.sma50.slice(0, 1) : fmpData.sma50;
+    const latestSma200 = Array.isArray(fmpData.sma200) ? fmpData.sma200.slice(0, 1) : fmpData.sma200;
+
     // ── Assemble response ─────────────────────────────────────────────
     const payload = {
       ticker,
       fetchedAt: new Date().toISOString(),
       profile: fmpData.profile,
       quote: fmpData.quote,
-      incomeStatements: fmpData.income,
-      balanceSheet: fmpData.balanceSheet,
-      cashFlow: fmpData.cashFlow,
+      incomeStatementsAnnual: fmpData.incomeAnnual,
+      incomeStatementsQuarterly: fmpData.incomeQuarterly,
+      balanceSheetAnnual: fmpData.balanceSheetAnnual,
+      balanceSheetQuarterly: fmpData.balanceSheetQuarterly,
+      cashFlowAnnual: fmpData.cashFlowAnnual,
+      cashFlowQuarterly: fmpData.cashFlowQuarterly,
       ratiosTTM: fmpData.ratiosTTM,
+      ratiosAnnual: fmpData.ratiosAnnual,
       keyMetricsTTM: fmpData.keyMetricsTTM,
+      keyMetricsAnnual: fmpData.keyMetricsAnnual,
       analystEstimates: fmpData.analystEstimates,
       analystConsensus: fmpData.analystConsensus,
       upgradesDowngrades: fmpData.upgradesDowngrades,
       institutionalOwnership: fmpData.institutionalOwn,
       insiderTrading: fmpData.insiderTrading,
       stockPeers: fmpData.stockPeers,
-      historicalPrices: fmpData.historicalPrices,
+      historicalPrices: trimmedPrices,
       technicals: {
-        rsi: fmpData.rsi,
-        sma50: fmpData.sma50,
-        sma200: fmpData.sma200,
+        rsi: latestRsi,
+        sma50: latestSma50,
+        sma200: latestSma200,
       },
       enterpriseValue: fmpData.enterpriseValue,
       peerComparisons,
