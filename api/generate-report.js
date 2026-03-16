@@ -425,12 +425,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid JSON body" });
   }
 
-  const { stockData, userInput } = body || {};
+  let { stockData, userInput } = body || {};
   if (!stockData) return res.status(400).json({ error: "Missing stockData in request body" });
   if (!userInput || !userInput.ticker) return res.status(400).json({ error: "Missing userInput.ticker in request body" });
 
+  // Strip debug fields and trim large arrays to keep prompt within token limits
+  if (stockData._errors) delete stockData._errors;
+  if (stockData.fetchedAt) delete stockData.fetchedAt;
+  if (stockData.ticker) delete stockData.ticker;
+
   const systemPrompt = buildSystemPrompt();
   const userPrompt = buildUserPrompt(stockData, userInput);
+
+  // Log prompt size for debugging
+  const promptChars = systemPrompt.length + userPrompt.length;
+  console.log(`[generate-report] ticker=${userInput.ticker}, prompt size=${promptChars} chars (~${Math.round(promptChars / 4)} tokens)`);
 
   try {
     const response = await fetch(ANTHROPIC_URL, {
@@ -442,7 +451,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 32000,
+        max_tokens: 16000,
         system: systemPrompt,
         messages: [
           { role: "user", content: userPrompt },

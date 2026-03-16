@@ -163,6 +163,28 @@ export default async function handler(req, res) {
     const latestSma50 = Array.isArray(fmpData.sma50) ? fmpData.sma50.slice(0, 1) : fmpData.sma50;
     const latestSma200 = Array.isArray(fmpData.sma200) ? fmpData.sma200.slice(0, 1) : fmpData.sma200;
 
+    // Trim large arrays to prevent exceeding Vercel body limits / Claude token limits
+    // Institutional holders: keep top 10 (sorted by shares)
+    let trimmedInstitutional = fmpData.institutionalOwn;
+    if (Array.isArray(trimmedInstitutional) && trimmedInstitutional.length > 10) {
+      trimmedInstitutional = trimmedInstitutional.slice(0, 10);
+    }
+    // Insider trading: keep latest 10
+    let trimmedInsider = fmpData.insiderTrading;
+    if (Array.isArray(trimmedInsider) && trimmedInsider.length > 10) {
+      trimmedInsider = trimmedInsider.slice(0, 10);
+    }
+    // Upgrades/downgrades: keep latest 10
+    let trimmedUpgrades = fmpData.upgradesDowngrades;
+    if (Array.isArray(trimmedUpgrades) && trimmedUpgrades.length > 10) {
+      trimmedUpgrades = trimmedUpgrades.slice(0, 10);
+    }
+    // Analyst estimates: keep latest 4 (instead of 8)
+    let trimmedEstimates = fmpData.analystEstimates;
+    if (Array.isArray(trimmedEstimates) && trimmedEstimates.length > 4) {
+      trimmedEstimates = trimmedEstimates.slice(0, 4);
+    }
+
     // ── Assemble response ─────────────────────────────────────────────
     const payload = {
       ticker,
@@ -179,11 +201,11 @@ export default async function handler(req, res) {
       ratiosAnnual: fmpData.ratiosAnnual,
       keyMetricsTTM: fmpData.keyMetricsTTM,
       keyMetricsAnnual: fmpData.keyMetricsAnnual,
-      analystEstimates: fmpData.analystEstimates,
+      analystEstimates: trimmedEstimates,
       analystConsensus: fmpData.analystConsensus,
-      upgradesDowngrades: fmpData.upgradesDowngrades,
-      institutionalOwnership: fmpData.institutionalOwn,
-      insiderTrading: fmpData.insiderTrading,
+      upgradesDowngrades: trimmedUpgrades,
+      institutionalOwnership: trimmedInstitutional,
+      insiderTrading: trimmedInsider,
       stockPeers: fmpData.stockPeers,
       historicalPrices: trimmedPrices,
       technicals: {

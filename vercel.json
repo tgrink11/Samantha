@@ -2,7 +2,7 @@
   "framework": "vite",
   "functions": {
     "api/fetch-stock-data.js": { "maxDuration": 30 },
-    "api/generate-report.js": { "maxDuration": 120 },
+    "api/generate-report.js": { "maxDuration": 300 },
     "api/generate-podcast.js": { "maxDuration": 60 },
     "api/save-report.js": { "maxDuration": 10 },
     "api/reports.js": { "maxDuration": 10 },
