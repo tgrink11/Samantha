@@ -85,11 +85,18 @@ export default async function handler(req, res) {
     // ── Execute all in parallel with fault tolerance ──────────────────
     const allResults = await Promise.allSettled([...fmpPromises, ...fredPromises]);
 
-    // Map FMP results
+    // Map FMP results (log errors for debugging)
     const fmpData = {};
+    const fmpErrors = {};
     fmpKeys.forEach((key, i) => {
       const r = allResults[i];
-      fmpData[key] = r.status === 'fulfilled' ? r.value : null;
+      if (r.status === 'fulfilled') {
+        fmpData[key] = r.value;
+      } else {
+        fmpData[key] = null;
+        fmpErrors[key] = r.reason?.message || String(r.reason);
+        console.error(`FMP ${key} failed:`, r.reason?.message || r.reason);
+      }
     });
 
     // Map FRED results
@@ -192,6 +199,8 @@ export default async function handler(req, res) {
         fedFundsRate: fredData.DFF,
         cpi: fredData.CPIAUCSL,
       },
+      // Debug: include any API errors (remove after debugging)
+      _errors: Object.keys(fmpErrors).length > 0 ? fmpErrors : undefined,
     };
 
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
