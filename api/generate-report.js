@@ -19,8 +19,8 @@ const REPORT_SCHEMA = JSON.stringify({
   hero: {
     price: "number - current stock price",
     priceChangeToday: "string - e.g. +1.25 (+0.82%)",
-    marketCap: "string - formatted, e.g. $3.45T",
-    marketCapLabel: "string - e.g. Mega Cap",
+    marketCap: "number - raw market cap number",
+    marketCapLabel: "string - formatted market cap, e.g. $3.2T, $450B, $12.5B",
     week52Range: "string - e.g. $150.00 - $225.00",
     week52RangeNote: "string - context about where price sits in range",
     recommendation: "string - one of: Strong Buy, Buy, Hold, Sell, Strong Sell",
@@ -28,80 +28,99 @@ const REPORT_SCHEMA = JSON.stringify({
   },
   executiveSummary: {
     takeaways: [
-      { number: "number - 1-5", title: "string - short headline", body: "string - 2-3 sentence explanation" }
+      { number: "number - 1-3", title: "string - short headline", body: "string - 2-3 sentence explanation" }
     ]
   },
   quantitative: {
     healthGrades: {
-      profitability: { grade: "string - A+ to F", detail: "string" },
-      liquidity: { grade: "string - A+ to F", detail: "string" },
-      solvency: { grade: "string - A+ to F", detail: "string" },
-      efficiency: { grade: "string - A+ to F", detail: "string" }
+      profitability: { grade: "string - A+ to F", detail: "string - rationale with key metrics" },
+      liquidity: { grade: "string - A+ to F", detail: "string - rationale with key metrics" },
+      solvency: { grade: "string - A+ to F", detail: "string - rationale with key metrics" },
+      efficiency: { grade: "string - A+ to F", detail: "string - rationale with key metrics" }
     },
     ownership: {
       institutions: "string - percentage, e.g. 72.5%",
-      public: "string - percentage",
-      insiders: "string - percentage",
+      public: "string - percentage, e.g. 25.8%",
+      insiders: "string - percentage, e.g. 1.7%",
       commentary: "string - insight on ownership structure"
     },
     shortInterest: {
       sharesShort: "string - formatted number, e.g. 12.5M",
-      shortPercentFloat: "string - percentage",
-      shortRatio: "string - days to cover",
-      priorMonth: "string - prior month comparison",
+      shortPercentFloat: "string - percentage, e.g. 1.2%",
+      shortRatio: "string - days to cover, e.g. 1.8 days",
+      priorMonth: "string - prior month comparison, e.g. 29.1M",
       commentary: "string - what short interest signals"
     },
     balanceSheet: {
       items: [
-        { label: "string - e.g. Total Cash", value: "string - formatted", detail: "string - context" }
+        { label: "string - e.g. Total Cash", value: "string - formatted, e.g. $65.2B", detail: "string - trend context" }
       ],
       commentary: "string - overall balance sheet assessment"
     }
   },
   keyRatios: {
     rows: [
-      { metric: "string - ratio name", current: "string - current value", prior1: "string - prior quarter or year", prior2: "string - 2 periods ago", industryAvg: "string - industry average or N/A" }
+      { metric: "string - ratio name", current: "string - current value", prior1: "string - prior year value", prior2: "string - 2 years ago value", industryAvg: "string - industry average" }
     ],
-    commentary: "string - key ratio insights"
+    commentary: "string - key ratio insights, prefix with Valuation Context:"
   },
   growth: {
-    ruleOf40Score: "number - revenue growth pct + profit margin pct",
-    ruleOf40Max: 40,
+    ruleOf40Score: "string - Kerry Rule of 40 score (3-Year Rev CAGR + 3-Year EPS CAGR), e.g. 52.3",
+    ruleOf40Max: "string - always 40",
     ruleOf40Commentary: "string - interpretation of Rule of 40",
     metrics: [
       { label: "string - e.g. Revenue Growth YoY", value: "string - formatted percentage or number" }
     ],
-    commentary: "string - growth trajectory analysis"
+    commentary: "string - growth trajectory analysis, prefix with Growth Analysis:"
   },
   marketTAM: {
-    title: "string - e.g. Total Addressable Market",
-    totalTAM: "string - formatted, e.g. $500B",
+    title: "string - market opportunity title",
+    totalTAM: "string - formatted, e.g. $500B by 2030",
     segments: [
-      { name: "string", size: "string - formatted", description: "string" }
+      { name: "string - segment name", size: "string - segment TAM size", description: "string - company position in segment" }
     ],
-    commentary: "string - TAM analysis and company positioning"
+    commentary: "string - TAM analysis, prefix with Market Position:"
   },
   peerComparison: {
     rows: [
-      { company: "string - company name (ticker)", marketCap: "string - formatted", revenueGrowth: "string - percentage", grossMargin: "string - percentage", priceSales: "string - ratio", scale: "string - e.g. Mega Cap, Large Cap" }
+      { company: "string - company name (ticker)", marketCap: "string - formatted", revenueGrowth: "string - percentage", grossMargin: "string - percentage", priceSales: "string - ratio", scale: "string - e.g. Mega-cap leader, Mid-cap challenger" }
     ],
-    commentary: "string - competitive positioning analysis"
+    commentary: "string - competitive positioning analysis, prefix with Competitive Edge:"
   },
   forecasts: {
-    conservative: { assumptions: "string", jan2027: "string", jan2028: "string", jan2029: "string", threeYearROI: "string", meetsGoal: "boolean" },
+    conservative: { assumptions: "string", jan2027: "string - e.g. $185", jan2028: "string", jan2029: "string", threeYearROI: "string - e.g. +45%", meetsGoal: "boolean" },
     moderate: { assumptions: "string", jan2027: "string", jan2028: "string", jan2029: "string", threeYearROI: "string", meetsGoal: "boolean" },
     aggressive: { assumptions: "string", jan2027: "string", jan2028: "string", jan2029: "string", threeYearROI: "string", meetsGoal: "boolean" },
-    commentary: "string - forecast methodology and key drivers"
+    commentary: "string - forecast analysis, prefix with 100% ROI Goal Check:"
   },
   riskDashboard: {
-    volatility12m: "string", beta: "string", maxDrawdown1y: "string", sharpeRatio: "string", sortinoRatio: "string",
+    volatility12m: "string - annualized 12-month volatility, e.g. 32.5%",
+    volatilityLabel: "string - Low (<20%), Moderate (20-35%), High (35-50%), or Extreme (>50%)",
+    volatilityDetail: "string - context on what drives the volatility",
+    beta: "string - beta relative to S&P 500, e.g. 1.25",
+    betaDetail: "string - interpretation of beta value",
+    maxDrawdown1y: "string - largest peak-to-trough decline in last 12 months, e.g. -28.5%",
+    maxDrawdownDetail: "string - when it happened and what caused it",
+    sharpeRatio: "string - risk-adjusted return",
+    sortinoRatio: "string - downside risk-adjusted return",
+    riskReturnInterpretation: "string - 1-2 sentences on overall risk/return profile",
     riskFactors: [
       { name: "string", severity: "string - High/Medium/Low", detail: "string" }
     ],
     technical: {
-      currentPrice: "string", sma50: "string", sma200: "string", week52High: "string", week52Low: "string", avgVolume: "string", shortInterest: "string"
+      currentPrice: "string - current price formatted",
+      sma50: "string - 50-day SMA value",
+      sma50Note: "string - price vs SMA50 interpretation",
+      sma200: "string - 200-day SMA value",
+      sma200Note: "string - price vs SMA200 interpretation",
+      week52High: "string - 52-week high price",
+      week52HighNote: "string - distance from 52-week high",
+      week52Low: "string - 52-week low price",
+      week52LowNote: "string - distance from 52-week low",
+      avgVolume: "string - average daily volume",
+      shortInterest: "string - short interest summary"
     },
-    technicalAssessment: "string - overall technical analysis summary"
+    technicalAssessment: "string - overall technical analysis, prefix with Technical Assessment:"
   },
   qualitative: {
     businessModel: "string - 2-3 sentences on business model strength",
@@ -111,12 +130,16 @@ const REPORT_SCHEMA = JSON.stringify({
     rubricScore: { score: "number - 1 to 10", max: 10, commentary: "string - justification for qualitative score" }
   },
   callToAction: {
-    recommendation: "string - clear actionable recommendation",
+    recommendation: "string - full paragraph recommendation with **bold** markers for key phrases",
     stopLoss: "string - suggested stop-loss level with reasoning",
     currentHolderGuidance: "string - advice for current holders",
-    watchPoints: ["string - key events or levels to watch"]
+    watchPoints: ["string - key events or levels to watch (4-6 items)"]
   },
-  podcastScript: "string - 3-5 minute podcast script. Conversational insightful tone as Samantha."
+  investmentScore: {
+    score: "number - overall investment attractiveness score 1-100 (80-100: Strong Buy, 60-79: Buy, 40-59: Hold, 20-39: Underperform, 1-19: Sell)",
+    interpretation: "string - 1-2 sentences explaining the score"
+  },
+  podcastScript: "string - 800-1200 word podcast script as Samantha speaking conversationally to the user by name. No markdown or formatting."
 }, null, 2);
 
 function buildMasterPrompt(stockData, userInput) {
@@ -208,7 +231,7 @@ export default async function handler(req, res) {
     // Strip markdown code blocks if present
     let jsonStr = rawText;
     const tick = String.fromCharCode(96);
-    const codeBlockRegex = new RegExp(tick + tick + tick + "(?:json)?\s*\n?([\s\S]*?)\n?\s*" + tick + tick + tick);
+    const codeBlockRegex = new RegExp(tick + tick + tick + "(?:json)?\\s*\\n?([\\s\\S]*?)\\n?\\s*" + tick + tick + tick);
     const codeBlockMatch = jsonStr.match(codeBlockRegex);
     if (codeBlockMatch) {
       jsonStr = codeBlockMatch[1];
