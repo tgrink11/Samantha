@@ -451,7 +451,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 16000,
+        max_tokens: 32000,
         system: systemPrompt,
         messages: [
           { role: "user", content: userPrompt },
@@ -470,6 +470,17 @@ export default async function handler(req, res) {
     }
 
     const result = await response.json();
+
+    // Log stop reason — if "max_tokens", the response was truncated
+    const stopReason = result?.stop_reason || 'unknown';
+    const inputTokens = result?.usage?.input_tokens || '?';
+    const outputTokens = result?.usage?.output_tokens || '?';
+    console.log(`[generate-report] stop_reason=${stopReason}, input_tokens=${inputTokens}, output_tokens=${outputTokens}`);
+
+    if (stopReason === 'max_tokens') {
+      console.warn(`[generate-report] WARNING: Response truncated at max_tokens! Output used ${outputTokens} tokens.`);
+    }
+
     const rawText = (result && result.content && result.content[0] && result.content[0].text) || "";
 
     // Strip markdown code blocks if present
@@ -493,11 +504,40 @@ export default async function handler(req, res) {
     try {
       report = JSON.parse(jsonStr);
     } catch (parseErr) {
-      console.error("Failed to parse Claude response as JSON:", parseErr.message);
-      return res.status(502).json({
-        error: "Failed to parse AI response as JSON",
-        rawPreview: rawText.slice(0, 500),
-      });
+      // If truncated, try to repair by closing open strings/braces
+      if (stopReason === 'max_tokens') {
+        console.warn('[generate-report] Attempting to repair truncated JSON...');
+        let repaired = jsonStr;
+        // Close any unclosed string
+        const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
+        if (quoteCount % 2 !== 0) repaired += '"';
+        // Count open vs close braces/brackets and close them
+        let openBraces = 0, openBrackets = 0;
+        for (const ch of repaired) {
+          if (ch === '{') openBraces++;
+          else if (ch === '}') openBraces--;
+          else if (ch === '[') openBrackets++;
+          else if (ch === ']') openBrackets--;
+        }
+        while (openBrackets > 0) { repaired += ']'; openBrackets--; }
+        while (openBraces > 0) { repaired += '}'; openBraces--; }
+        try {
+          report = JSON.parse(repaired);
+          console.log('[generate-report] Truncated JSON repaired successfully');
+        } catch (repairErr) {
+          console.error("Failed to repair truncated JSON:", repairErr.message);
+          return res.status(502).json({
+            error: "AI response was truncated and could not be repaired. Try a smaller ticker.",
+            rawPreview: rawText.slice(0, 500),
+          });
+        }
+      } else {
+        console.error("Failed to parse Claude response as JSON:", parseErr.message);
+        return res.status(502).json({
+          error: "Failed to parse AI response as JSON",
+          rawPreview: rawText.slice(0, 500),
+        });
+      }
     }
 
     return res.status(200).json(report);
