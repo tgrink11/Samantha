@@ -45,34 +45,34 @@ export default async function handler(req, res) {
   const fromDate = threeYearsAgo.toISOString().split('T')[0];
 
   try {
-    // ── FMP requests ──────────────────────────────────────────────────
+    // ── FMP requests (v3 endpoints) ─────────────────────────────────────
     const fmpEndpoints = {
-      profile:              `/stable/profile?symbol=${ticker}`,
-      quote:                `/stable/quote?symbol=${ticker}`,
+      profile:              `/v3/profile/${ticker}`,
+      quote:                `/v3/quote/${ticker}`,
       // Annual financials (for multi-year comparisons, Rule of 40, growth trends)
-      incomeAnnual:         `/stable/income-statement?symbol=${ticker}&limit=4&period=annual`,
-      balanceSheetAnnual:   `/stable/balance-sheet-statement?symbol=${ticker}&limit=4&period=annual`,
-      cashFlowAnnual:       `/stable/cash-flow-statement?symbol=${ticker}&limit=4&period=annual`,
+      incomeAnnual:         `/v3/income-statement/${ticker}?limit=4&period=annual`,
+      balanceSheetAnnual:   `/v3/balance-sheet-statement/${ticker}?limit=4&period=annual`,
+      cashFlowAnnual:       `/v3/cash-flow-statement/${ticker}?limit=4&period=annual`,
       // Quarterly financials (for recent quarter detail)
-      incomeQuarterly:      `/stable/income-statement?symbol=${ticker}&limit=8&period=quarter`,
-      balanceSheetQuarterly:`/stable/balance-sheet-statement?symbol=${ticker}&limit=4&period=quarter`,
-      cashFlowQuarterly:    `/stable/cash-flow-statement?symbol=${ticker}&limit=4&period=quarter`,
+      incomeQuarterly:      `/v3/income-statement/${ticker}?limit=8&period=quarter`,
+      balanceSheetQuarterly:`/v3/balance-sheet-statement/${ticker}?limit=4&period=quarter`,
+      cashFlowQuarterly:    `/v3/cash-flow-statement/${ticker}?limit=4&period=quarter`,
       // Ratios & metrics (TTM + annual history)
-      ratiosTTM:            `/stable/ratios-ttm?symbol=${ticker}`,
-      ratiosAnnual:         `/stable/ratios?symbol=${ticker}&limit=4&period=annual`,
-      keyMetricsTTM:        `/stable/key-metrics-ttm?symbol=${ticker}`,
-      keyMetricsAnnual:     `/stable/key-metrics?symbol=${ticker}&limit=4&period=annual`,
-      analystEstimates:     `/stable/analyst-estimates?symbol=${ticker}&limit=8`,
-      analystConsensus:     `/stable/analyst-stock-recommendations?symbol=${ticker}`,
-      upgradesDowngrades:   `/stable/upgrades-downgrades?symbol=${ticker}&limit=20`,
-      institutionalOwn:     `/stable/institutional-ownership/extract-analytics/holder?symbol=${ticker}`,
-      insiderTrading:       `/stable/insider-trading?symbol=${ticker}&limit=20`,
-      stockPeers:           `/stable/stock-peers?symbol=${ticker}`,
-      historicalPrices:     `/stable/historical-price-eod/full?symbol=${ticker}&from=${fromDate}`,
-      rsi:                  `/stable/technical-indicators/rsi?symbol=${ticker}&periodLength=14&timeframe=1day`,
-      sma50:                `/stable/technical-indicators/sma?symbol=${ticker}&periodLength=50&timeframe=1day`,
-      sma200:               `/stable/technical-indicators/sma?symbol=${ticker}&periodLength=200&timeframe=1day`,
-      enterpriseValue:      `/stable/enterprise-value?symbol=${ticker}&limit=4&period=annual`,
+      ratiosTTM:            `/v3/ratios-ttm/${ticker}`,
+      ratiosAnnual:         `/v3/ratios/${ticker}?limit=4&period=annual`,
+      keyMetricsTTM:        `/v3/key-metrics-ttm/${ticker}`,
+      keyMetricsAnnual:     `/v3/key-metrics/${ticker}?limit=4&period=annual`,
+      analystEstimates:     `/v3/analyst-estimates/${ticker}?limit=8`,
+      analystConsensus:     `/v3/analyst-stock-recommendations/${ticker}`,
+      upgradesDowngrades:   `/v4/upgrades-downgrades?symbol=${ticker}&limit=20`,
+      institutionalOwn:     `/v3/institutional-holder/${ticker}`,
+      insiderTrading:       `/v4/insider-trading?symbol=${ticker}&limit=20`,
+      stockPeers:           `/v4/stock_peers?symbol=${ticker}`,
+      historicalPrices:     `/v3/historical-price-full/${ticker}?from=${fromDate}`,
+      rsi:                  `/v3/technical_indicator/daily/${ticker}?type=rsi&period=14`,
+      sma50:                `/v3/technical_indicator/daily/${ticker}?type=sma&period=50`,
+      sma200:               `/v3/technical_indicator/daily/${ticker}?type=sma&period=200`,
+      enterpriseValue:      `/v3/enterprise-values/${ticker}?limit=4&period=annual`,
     };
 
     const fmpKeys = Object.keys(fmpEndpoints);
@@ -121,8 +121,8 @@ export default async function handler(req, res) {
 
     if (peers.length > 0) {
       const peerPromises = peers.flatMap(p => [
-        fmpFetch(`/stable/quote?symbol=${p}`, fmpKey),
-        fmpFetch(`/stable/ratios-ttm?symbol=${p}`, fmpKey),
+        fmpFetch(`/v3/quote/${p}`, fmpKey),
+        fmpFetch(`/v3/ratios-ttm/${p}`, fmpKey),
       ]);
       const peerResults = await Promise.allSettled(peerPromises);
       for (let i = 0; i < peers.length; i++) {
